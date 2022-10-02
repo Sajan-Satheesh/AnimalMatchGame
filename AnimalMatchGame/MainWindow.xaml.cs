@@ -1,7 +1,8 @@
-﻿using System;
+﻿// using are used to use code from lot of other namespaces.
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
+using System.Text; //lighter directives are not used in this file.
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -15,16 +16,37 @@ using System.Windows.Shapes;
 
 namespace AnimalMatchGame
 {
+    using System.Windows.Threading;
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
     public partial class MainWindow : Window
     {
+        DispatcherTimer timer = new DispatcherTimer();
+        int tenthsOfSecondsElapsed;
+        int matchesFound;
+        TextBlock lastTextBlockClicked;
+        bool findingMatch = false;
+
         public MainWindow()
         {
             InitializeComponent();
+
+            timer.Interval = TimeSpan.FromSeconds(.1);
+            timer.Tick += Timer_Tick;
             SetUpGame();
         }
+
+        private void Timer_Tick(object sender, EventArgs e)
+        {
+            tenthsOfSecondsElapsed++;
+            timeTextBlock.Text = (tenthsOfSecondsElapsed / 10F).ToString("0.0s");
+            if (matchesFound == 8)
+            {
+                timer.Stop();
+                timeTextBlock.Text = timeTextBlock.Text + "- Play again?";
+            }
+       }
 
         private void SetUpGame()
         {
@@ -43,10 +65,49 @@ namespace AnimalMatchGame
 
             foreach(TextBlock textBlock in mainGrid.Children.OfType<TextBlock>())
             {
-                int index = random.Next(animalArray.Count);
-                string nextEmoji = animalArray[index];
-                textBlock.Text = nextEmoji;
-                animalArray.RemoveAt(index);
+                if (textBlock.Name != "timeTextBlock")
+                {
+                    textBlock.Visibility = Visibility.Visible;
+                    int index = random.Next(animalArray.Count);
+                    string nextEmoji = animalArray[index];
+                    textBlock.Text = nextEmoji;
+                    textBlock.FontSize = 80;
+                    animalArray.RemoveAt(index);
+                }
+                timer.Start();
+                tenthsOfSecondsElapsed = 0;
+                matchesFound = 0;
+                
+            }
+        }
+
+        private void TextBlock_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            TextBlock textBlock = sender as TextBlock;
+            if (findingMatch == false)
+            {
+                textBlock.Visibility = Visibility.Hidden;
+                lastTextBlockClicked = textBlock;
+                findingMatch = true;
+            }
+            else if(textBlock.Text == lastTextBlockClicked.Text)
+            {
+                matchesFound++;
+                textBlock.Visibility = Visibility.Hidden;
+                findingMatch = false;
+            }
+            else
+            {
+                lastTextBlockClicked.Visibility = Visibility.Visible;
+                findingMatch = false;
+            }
+        }
+
+        private void TimeTextBlock_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            if (matchesFound == 8)
+            {
+                SetUpGame();
             }
         }
     }
